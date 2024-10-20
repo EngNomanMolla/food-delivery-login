@@ -1,7 +1,8 @@
 import 'dart:async';
 import './auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
+
 class AuthScreen extends StatefulWidget {
   @override
   _AuthScreenState createState() => _AuthScreenState();
@@ -9,7 +10,14 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   AuthService authService = AuthService();
-  StreamSubscription<String?>? _linkSubscription; // Declare a StreamSubscription
+  late AppLinks _appLinks; // AppLinks is singleton
+  StreamSubscription<Uri?>? _linkSubscription; // Declare a StreamSubscription
+
+  @override
+    void initState() {
+      super.initState();
+      _appLinks = AppLinks();
+  }
 
   @override
   void dispose() {
@@ -20,19 +28,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _startLinkStream() {
     // Start listening to the link stream
-    _linkSubscription = linkStream.listen((String? link) async {
-      if (link != null) {
-        Uri uri = Uri.parse(link);
-        String? code = uri.queryParameters['code'];
+    _linkSubscription = _appLinks.uriLinkStream.listen((Uri link) async {
+        String? code = link.queryParameters['code'];
         if (code != null) {
           print("[AUTH CODE]: " + code);
           await authService.exchangeCodeForToken(code);
           _stopLinkStream();
-        }
       }
-    }, onError: (err) {
-      // Handle error
-      print('Error listening to link stream: $err');
     });
   }
 
